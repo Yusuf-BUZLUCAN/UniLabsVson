@@ -53,7 +53,7 @@ interface Note {
 export default function UserProfilePage() {
   const params = useParams()
   const userId = Number(params.id)
-  const loggedInUserId = 1 // Örnek: Giriş yapan kullanıcı id'si (gerçek projede oturumdan alınmalı)
+  const loggedInUserId = -1
   const [activeTab, setActiveTab] = useState("posts")
   const [isFollowing, setIsFollowing] = useState(false)
 

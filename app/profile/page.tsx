@@ -24,6 +24,8 @@ import {
   User,
 } from "lucide-react"
 import { Navbar } from "@/components/navbar"
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser"
+import { useEffect } from "react"
 import Link from "next/link"
 
 interface Grade {
@@ -76,6 +78,29 @@ interface SavedPost {
 }
 
 export default function ProfilePage() {
+  const supabase = getSupabaseBrowserClient()
+  const [email, setEmail] = useState<string>("")
+  const [displayName, setDisplayName] = useState<string>("")
+  const [department, setDepartment] = useState<string>("")
+  const [year, setYear] = useState<string>("")
+
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase.auth.getSession()
+      const user = data.session?.user
+      if (user) {
+        setEmail(user.email || "")
+        const fn = (user.user_metadata as any)?.firstName || ""
+        const ln = (user.user_metadata as any)?.lastName || ""
+        setDisplayName(`${fn} ${ln}`.trim())
+        setDepartment((user.user_metadata as any)?.department || "")
+        setYear((user.user_metadata as any)?.year || "")
+      }
+    }
+    load()
+    const { data: sub } = supabase.auth.onAuthStateChange(() => load())
+    return () => sub.subscription.unsubscribe()
+  }, [])
   const [activeTab, setActiveTab] = useState("info")
 
   const grades: Grade[] = [
@@ -309,7 +334,7 @@ export default function ProfilePage() {
       <Navbar />
 
       <div className="container mx-auto px-4 py-4 sm:py-6 max-w-6xl">
-        {/* Profile Header */}
+        {/* Profile Header - defaults for new users */}
         <Card className="mb-4 sm:mb-6 overflow-hidden shadow-lg border-0 bg-white/80 backdrop-blur-sm">
           <div className="h-24 sm:h-32 relative overflow-hidden">
             <img

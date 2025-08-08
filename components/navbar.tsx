@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser"
 
 interface Notification {
   id: number
@@ -223,7 +224,37 @@ export function Navbar() {
   }
 
   const unreadCount = notifications.filter((n) => !n.read).length
-  const [isLoggedIn, setIsLoggedIn] = useState(true) // Mock login state
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false)
+  const [userName, setUserName] = useState<string>("")
+  const [userSubtext, setUserSubtext] = useState<string>("")
+  const [avatarUrl, setAvatarUrl] = useState<string>("")
+
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient()
+    const load = async () => {
+      const { data } = await supabase.auth.getSession()
+      const session = data.session
+      const user = session?.user
+      setIsLoggedIn(Boolean(user))
+      if (user) {
+        const firstName = (user.user_metadata as any)?.firstName || ""
+        const lastName = (user.user_metadata as any)?.lastName || ""
+        const department = (user.user_metadata as any)?.department || ""
+        const year = (user.user_metadata as any)?.year || ""
+        setUserName(`${firstName} ${lastName}`.trim() || user.email || "Kullanıcı")
+        setUserSubtext([department, year].filter(Boolean).join(" • "))
+        setAvatarUrl((user.user_metadata as any)?.avatar_url || "")
+      }
+    }
+    load()
+
+    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+      load()
+    })
+    return () => {
+      sub.subscription.unsubscribe()
+    }
+  }, [])
 
   const getSearchResultLink = (result: SearchResult) => {
     switch (result.type) {
@@ -466,9 +497,14 @@ export function Navbar() {
                     <PopoverTrigger asChild>
                       <Button variant="ghost" size="sm" className="relative">
                         <Avatar className="w-8 h-8">
-                          <AvatarImage src="/images/merve-profile.jpg" />
+                          <AvatarImage src={avatarUrl || "/placeholder-user.jpg"} />
                           <AvatarFallback className="bg-gradient-to-r from-blue-400 to-cyan-400 text-white text-sm">
-                            MK
+                            {userName
+                              ? userName
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")
+                              : "U"}
                           </AvatarFallback>
                         </Avatar>
                       </Button>
@@ -477,14 +513,19 @@ export function Navbar() {
                       <div className="p-4 border-b">
                         <div className="flex items-center space-x-3">
                           <Avatar className="w-12 h-12">
-                            <AvatarImage src="/images/merve-profile.jpg" />
+                            <AvatarImage src={avatarUrl || "/placeholder-user.jpg"} />
                             <AvatarFallback className="bg-gradient-to-r from-blue-400 to-cyan-400 text-white">
-                              MK
+                              {userName
+                                ? userName
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")
+                                : "U"}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-semibold text-gray-800">Merve KARASAKAL</p>
-                            <p className="text-sm text-gray-500">Eczacılık - 3. Sınıf</p>
+                            <p className="font-semibold text-gray-800">{userName || "Kullanıcı"}</p>
+                            {userSubtext && <p className="text-sm text-gray-500">{userSubtext}</p>}
                           </div>
                         </div>
                       </div>
@@ -497,6 +538,16 @@ export function Navbar() {
                           <Settings className="w-4 h-4" />
                           <span>Ayarlar</span>
                         </Link>
+                        <button
+                          onClick={async () => {
+                            const supabase = getSupabaseBrowserClient()
+                            await supabase.auth.signOut()
+                            router.push("/login")
+                          }}
+                          className="w-full text-left p-2 hover:bg-gray-50 rounded-lg transition-colors text-sm text-gray-700"
+                        >
+                          Çıkış Yap
+                        </button>
                       </div>
                     </PopoverContent>
                   </Popover>
