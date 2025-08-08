@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Eye, EyeOff, User, Mail, Lock, GraduationCap, Building2, ArrowRight, CheckCircle } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser"
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -71,14 +72,30 @@ export default function RegisterPage() {
       return
     }
 
-    // Simulate registration
-    setTimeout(() => {
-      setIsLoading(false)
+    try {
+      const supabase = getSupabaseBrowserClient()
+      const { error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            studentNumber: formData.studentNumber,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            department: formData.department,
+            year: formData.year,
+          },
+          emailRedirectTo: `${window.location.origin}/login`,
+        },
+      })
+      if (error) throw error
       setIsSuccess(true)
-      setTimeout(() => {
-        router.push("/login")
-      }, 2000)
-    }, 2000)
+      setTimeout(() => router.push("/login"), 2000)
+    } catch (err: any) {
+      alert(err?.message ?? "Kayıt sırasında bir hata oluştu")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   if (isSuccess) {
