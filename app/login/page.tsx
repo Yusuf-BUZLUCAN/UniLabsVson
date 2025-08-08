@@ -12,45 +12,51 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Eye, EyeOff, User, Lock, Mail, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser"
 
 export default function LoginPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
-  const [studentNumber, setStudentNumber] = useState("")
+  const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [rememberMe, setRememberMe] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false)
-  const [forgotStudentNumber, setForgotStudentNumber] = useState("")
   const [forgotEmail, setForgotEmail] = useState("")
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
-    // Demo login check
-    if (studentNumber === "123456" && password === "password") {
-      setTimeout(() => {
-        setIsLoading(false)
-        router.push("/")
-      }, 1500)
-    } else {
-      setTimeout(() => {
-        setIsLoading(false)
-        alert("Geçersiz öğrenci numarası veya şifre!")
-      }, 1500)
+    try {
+      const supabase = getSupabaseBrowserClient()
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) {
+        throw error
+      }
+
+      // Supabase cookie’leri ayarladı; ana sayfaya yönlendir
+      router.push("/")
+    } catch (err: any) {
+      alert(err?.message ?? "Giriş yapılamadı")
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Simulate password reset
-    setTimeout(() => {
-      alert("Şifre sıfırlama bağlantısı e-posta adresinize gönderildi!")
+    try {
+      const supabase = getSupabaseBrowserClient()
+      const redirectTo = `${window.location.origin}/auth/update-password`
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, { redirectTo })
+      if (error) throw error
+      alert("Şifre sıfırlama bağlantısı e‑posta adresinize gönderildi.")
       setForgotPasswordOpen(false)
-      setForgotStudentNumber("")
       setForgotEmail("")
-    }, 1000)
+    } catch (err: any) {
+      alert(err?.message ?? "Şifre sıfırlama isteği gönderilemedi")
+    }
   }
 
   return (
@@ -77,19 +83,19 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <form onSubmit={handleLogin} className="space-y-4">
-              {/* Student Number */}
+              {/* Email */}
               <div className="space-y-2">
-                <Label htmlFor="studentNumber" className="text-gray-700 font-medium">
-                  Öğrenci Numarası
+                <Label htmlFor="email" className="text-gray-700 font-medium">
+                  E‑posta
                 </Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <Input
-                    id="studentNumber"
-                    type="text"
-                    placeholder="Öğrenci numaranızı girin"
-                    value={studentNumber}
-                    onChange={(e) => setStudentNumber(e.target.value)}
+                    id="email"
+                    type="email"
+                    placeholder="E‑posta adresinizi girin"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="pl-10 h-12 border-gray-200 focus:border-blue-300 focus:ring-blue-200"
                     required
                   />
@@ -149,21 +155,6 @@ export default function LoginPage() {
                     </DialogHeader>
                     <form onSubmit={handleForgotPassword} className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="forgotStudentNumber">Öğrenci Numarası</Label>
-                        <div className="relative">
-                          <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                          <Input
-                            id="forgotStudentNumber"
-                            type="text"
-                            placeholder="Öğrenci numaranızı girin"
-                            value={forgotStudentNumber}
-                            onChange={(e) => setForgotStudentNumber(e.target.value)}
-                            className="pl-10"
-                            required
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
                         <Label htmlFor="forgotEmail">E-posta Adresi</Label>
                         <div className="relative">
                           <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -209,17 +200,11 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            {/* Demo Info */}
+            {/* Info */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h4 className="font-medium text-blue-800 mb-2">Demo Giriş Bilgileri:</h4>
-              <div className="text-sm text-blue-700 space-y-1">
-                <p>
-                  <strong>Öğrenci No:</strong> 123456
-                </p>
-                <p>
-                  <strong>Şifre:</strong> password
-                </p>
-              </div>
+              <p className="text-sm text-blue-700">
+                Giriş için e‑posta ve şifre kullanılır. Şifrenizi unuttuysanız "Şifremi unuttum" üzerinden sıfırlayabilirsiniz.
+              </p>
             </div>
 
             {/* Register Link */}
