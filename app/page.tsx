@@ -42,7 +42,7 @@ export default function HomePage() {
   const handleCreatePost = () => {
     if (!newPost.trim()) return
     setPosts([{ id: Date.now(), content: newPost.trim() }, ...posts])
-    setNewPost("")
+      setNewPost("")
   }
 
   return (
@@ -61,9 +61,9 @@ export default function HomePage() {
                 <Link href="/register">
                   <Button className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600">Kaydol</Button>
                 </Link>
-              </div>
-            </CardContent>
-          </Card>
+                  </div>
+              </CardContent>
+            </Card>
         ) : (
           <div className="max-w-3xl mx-auto space-y-6">
             <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">

@@ -23,6 +23,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false)
   const [forgotEmail, setForgotEmail] = useState("")
+  const [message, setMessage] = useState<string>("")
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,9 +37,10 @@ export default function LoginPage() {
       }
 
       // Supabase cookie’leri ayarladı; ana sayfaya yönlendir
+      setMessage(`Giriş başarılı: user=${data.user?.id ?? data.session?.user?.id ?? 'unknown'}`)
       router.push("/")
     } catch (err: any) {
-      alert(err?.message ?? "Giriş yapılamadı")
+      setMessage(err?.message ?? "Giriş yapılamadı")
     } finally {
       setIsLoading(false)
     }
@@ -200,11 +202,14 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            {/* Info */}
+            {/* Info / Debug message */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-700">
                 Giriş için e‑posta ve şifre kullanılır. Şifrenizi unuttuysanız "Şifremi unuttum" üzerinden sıfırlayabilirsiniz.
               </p>
+              {message && (
+                <p className="text-sm text-amber-700 mt-2">{message}</p>
+              )}
             </div>
 
             {/* Register Link */}
